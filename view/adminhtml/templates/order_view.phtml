@@ -1,0 +1,17 @@
+<?php
+
+use Paquery\Shipping\Block\Adminhtml\Order\View\Custom;
+
+/** @var Custom $block */
+
+$tracking_number = $block->getExternalCode();
+    if (!empty($tracking_number)):
+        $apiURL = parse_url($block->getApiUrl());
+        $apiURL = $apiURL['scheme'] . '://' . $apiURL['host'];
+    ?>
+<div style="float:right;">
+    <p>Numero de seguimiento: <?=$tracking_number?></p>
+    <a class="action-default scalable action-save action-secondary" style="display:block;margin:10px 0;" target="_blank" href="<?php echo $apiURL ?>/labels/packages?externalCode=<?php echo $tracking_number?>">Ver etiqueta de seguimiento</a>
+</div>
+<div style="clear:both;"></div>
+<?php endif; ?>

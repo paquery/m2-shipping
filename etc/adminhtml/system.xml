@@ -1,0 +1,119 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="carriers">
+            <group id="paquery" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Paquery</label>
+                <field id="active" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Activado</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="mode" translate="label" type="select" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Execution Mode</label>
+                    <source_model>Paquery\Shipping\Config\Source\Mode</source_model>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+
+                <field id="api_url" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>API Url</label>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">1</field>
+                    </depends>
+                </field>
+                <field id="username" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>User</label>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">1</field>
+                    </depends>
+                </field>
+                <field id="password" translate="label" type='obscure' sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Password</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">1</field>
+                    </depends>
+                </field>
+
+                <field id="api_url_test" translate="label" type="text" sortOrder="21" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>API Url (Test)</label>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">2</field>
+                    </depends>
+                </field>
+                <field id="username_test" translate="label" type="text" sortOrder="31" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>User (Test)</label>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">2</field>
+                    </depends>
+                </field>
+                <field id="password_test" translate="label" type='obscure' sortOrder="41" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Password (Test)</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                    <depends>
+                        <field id="active">1</field>
+                        <field id="mode">2</field>
+                    </depends>
+                </field>
+
+                <field id="title" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Nombre en Checkout</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="attributesmapping" translate="label" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Selecciona los Atributos de tu tienda y sus unidades</label>
+                    <frontend_model>Paquery\Shipping\Block\Adminhtml\System\Config\Fieldset\Mapping</frontend_model>
+                    <backend_model>Paquery\Shipping\Model\Adminhtml\Attribute\Validation\Mapping</backend_model>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="ship12hs_title" translate="label" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Titulo 12hs</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="ship24hs_title" translate="label" type="text" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Titulo 24hs</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="ship48hs_title" translate="label" type="text" sortOrder="90" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Titulo 48hs</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="shipPickup_title" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Titulo Pickup</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="shipSeller_title" translate="label" type="text" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Titulo Seller</label>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+                <field id="zonemapping" translate="label" sortOrder="120" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Especifica zonas y tipos de envio</label>
+                    <frontend_model>Paquery\Shipping\Block\Adminhtml\System\Config\Fieldset\ZipCodeMap</frontend_model>
+                    <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>
+                    <depends>
+                        <field id="active">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

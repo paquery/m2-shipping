@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @var Paquery\Shipping\Block\Adminhtml\System\Config\Fieldset\Mapping $block
+ */
+$_htmlId = $this->getHtmlId() ? $this->getHtmlId() : '_' . uniqid();
+$productCode = $block->_getAttributes();
+$sizeUnit = ['cm', 'mt'];
+$weightUnit = ['kg', 'gr'];
+$paqueryCode = ['length', 'width', 'height', 'weight'];
+$paqueryLabel = $block->_getPaqueryLabel();
+$prevValues = [];
+$unit = $sizeUnit;
+
+$prevValues = $block->_getStoredMappingValues();
+
+?>
+
+<div class="grid" id="grid<?php /* @noEscape */ echo $_htmlId ?>">
+    <table cellpadding="0" cellspacing="0" class="border admin__control-table">
+        <tr class="headings" id="headings<?php /* @noEscape */ echo $_htmlId ?>">
+            <th><?php /* @escapeNotVerified */ echo __('Paquery') ?></th>
+            <th><?php /* @escapeNotVerified */ echo __('Atributo del Producto') ?></th>
+            <th><?php /* @escapeNotVerified */ echo __('Unidad del Atributo') ?></th>
+        </tr>
+        <?php foreach ($paqueryCode as $key => $paqueryOption) : ?>
+            <tr id="<?php /* @noEscape */ echo $paqueryOption ?>">
+                    <td>
+                        <label><?php echo $block->escapeHtml($paqueryLabel[$key]) ?>:</label>
+                    </td>
+                    <td>
+                        <select name="groups[paquery][fields][attributesmapping][value][<?php /* @noEscape */ echo $paqueryOption ?>][attribute_code]">
+                            <?php foreach ($productCode as $option) : ?>
+                                <option value="<?php echo $block->escapeQuote($option->getAttributeCode()) ?>"
+                                    <?php /* @noEscape */ echo (isset($prevValues[$paqueryOption]['attribute_code']) && $prevValues[$paqueryOption]['attribute_code'] == $option->getAttributeCode()) ? "selected='selected'" : "" ?>>
+                                    <?php echo $block->escapeHtml($option->getFrontendLabel()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <?php if ($paqueryOption === 'weight') : $unit = $weightUnit;
+                    endif; ?>
+                    <td>
+                        <select name="groups[paquery][fields][attributesmapping][value][<?php /* @noEscape */ echo $paqueryOption ?>][unit]">
+                            <?php foreach ($unit as $_u) : ?>
+                                <option value="<?php /* @noEscape */ echo $_u ?>"
+                                        <?php /* @noEscape */ echo (isset($prevValues[$paqueryOption]['unit'])
+                                            && $prevValues[$paqueryOption]['unit'] == $_u) ? "selected='selected'" : '' ?>>
+                                    <?php /* @noEscape */ echo $_u ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>

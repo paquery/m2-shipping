@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="controller_action_predispatch_shipping_tracking_popup">
+        <observer name="setShipmentParams" instance="Paquery\Shipping\Observer\TrackingPopup" />
+    </event>
+    <event name="sales_order_shipment_save_after">
+        <observer name="paqueryProcessOrder" instance="Paquery\Shipping\Observer\Shipment" />
+    </event>
+</config>
