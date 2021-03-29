@@ -2,18 +2,40 @@
 
 namespace Paquery\Shipping\Model\Carrier;
 
+use Exception;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\Directory\Model\CountryFactory;
+use Magento\Directory\Model\CurrencyFactory;
+use Magento\Directory\Model\RegionFactory;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\DataObject;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Framework\Xml\Security;
 use Magento\Quote\Model\Quote\Address\RateRequest;
+use Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory;
+use Magento\Quote\Model\Quote\Address\RateResult\MethodFactory;
+use Magento\Shipping\Model\Carrier\AbstractCarrierOnline;
+use Magento\Shipping\Model\Carrier\CarrierInterface;
 use Magento\Shipping\Model\Rate\Result;
+use Magento\Shipping\Model\Rate\ResultFactory;
+use Magento\Shipping\Model\Simplexml\ElementFactory;
+use Magento\Shipping\Model\Tracking\Result\StatusFactory;
+use Paquery\Shipping\Helper\CarrierData;
+use Paquery\Shipping\Helper\Data;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class Paquery
  *
  * @package Paquery\Shipping\Model\Carrier
  */
-class Paquery
-    extends \Magento\Shipping\Model\Carrier\AbstractCarrier
-    implements \Magento\Shipping\Model\Carrier\CarrierInterface
+class Paquery extends AbstractCarrierOnline implements CarrierInterface
 {
+
+    const CODE = 'paquery';
 
     /**
      * Code of the carrier
@@ -22,16 +44,7 @@ class Paquery
      */
     protected $_code = self::CODE;
     /**
-     *
-     */
-    const CODE = 'paquery';
-
-    /**
-     * @var \Paquery\Shipping\Helper\CarrierData
-     */
-    protected $_helperCarrierData;
-    /**
-     * @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface
+     * @var TimezoneInterface
      */
     protected $_timezone;
     /**
@@ -39,43 +52,103 @@ class Paquery
      */
     protected $_request;
     /**
-     * @var \Magento\Shipping\Model\Rate\ResultFactory
+     * @var ResultFactory
      */
     protected $_rateResultFactory;
     /**
-     * @var \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory
+     * @var MethodFactory
      */
     protected $_rateMethodFactory;
-
+    /**
+     * @var Data
+     */
+    protected $paqueryHelper;
+    /**
+     * @var \Magento\Shipping\Model\Tracking\ResultFactory
+     */
+    protected $resultFactory;
+    /**
+     * @var \Magento\Shipping\Model\Tracking\Result\ErrorFactory
+     */
+    protected $errorFactory;
+    /**
+     * @var StatusFactory
+     */
+    protected $statusFactory;
+    /**
+     * @var CarrierData
+     */
+    protected $helperCarrierData;
+    /**
+     * @var Registry
+     */
+    protected $registry;
 
     /**
      * Paquery constructor.
-     *
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface          $scopeConfig
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory  $rateErrorFactory
-     * @param \Psr\Log\LoggerInterface                                    $logger
-     * @param \Magento\Shipping\Model\Rate\ResultFactory                  $rateResultFactory
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
-     * @param \Paquery\Shipping\Helper\Data                      $helperData
-     * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface        $timeZone
-     * @param array                                                       $data
+     * @param ScopeConfigInterface $scopeConfig
+     * @param ErrorFactory $rateErrorFactory
+     * @param LoggerInterface $logger
+     * @param Security $xmlSecurity
+     * @param ElementFactory $xmlElFactory
+     * @param ResultFactory $rateFactory
+     * @param MethodFactory $rateMethodFactory
+     * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
+     * @param \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory
+     * @param StatusFactory $trackStatusFactory
+     * @param RegionFactory $regionFactory
+     * @param CountryFactory $countryFactory
+     * @param CurrencyFactory $currencyFactory
+     * @param \Magento\Directory\Helper\Data $directoryData
+     * @param CarrierData $helperCarrierData
+     * @param Data $paqueryHelper
+     * @param StockRegistryInterface $stockRegistry
+     * @param Registry $registry
+     * @param array $data
      */
     public function __construct(
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory,
-        \Psr\Log\LoggerInterface $logger,
-        \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
-        \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Paquery\Shipping\Helper\CarrierData $helperCarrierData,
-        \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timeZone,
+        ScopeConfigInterface $scopeConfig,
+        ErrorFactory $rateErrorFactory,
+        LoggerInterface $logger,
+        Security $xmlSecurity,
+        ElementFactory $xmlElFactory,
+        ResultFactory $rateFactory,
+        MethodFactory $rateMethodFactory,
+        \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
+        \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory,
+        StatusFactory $trackStatusFactory,
+        RegionFactory $regionFactory,
+        CountryFactory $countryFactory,
+        CurrencyFactory $currencyFactory,
+        \Magento\Directory\Helper\Data $directoryData,
+        CarrierData $helperCarrierData,
+        Data $paqueryHelper,
+        StockRegistryInterface $stockRegistry,
+        Registry $registry,
         array $data = []
-    ) {
-        $this->_rateResultFactory = $rateResultFactory;
-        $this->_rateMethodFactory = $rateMethodFactory;
-        $this->_helperCarrierData = $helperCarrierData;
-        $this->_logger = $logger;
-        $this->_timezone = $timeZone;
-        parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
+    )
+    {
+        parent::__construct(
+            $scopeConfig,
+            $rateErrorFactory,
+            $logger,
+            $xmlSecurity,
+            $xmlElFactory,
+            $rateFactory,
+            $rateMethodFactory,
+            $trackFactory,
+            $trackErrorFactory,
+            $trackStatusFactory,
+            $regionFactory,
+            $countryFactory,
+            $currencyFactory,
+            $directoryData,
+            $stockRegistry,
+            $data
+        );
+        $this->helperCarrierData = $helperCarrierData;
+        $this->paqueryHelper = $paqueryHelper;
+        $this->registry = $registry;
     }
 
     /**
@@ -83,31 +156,66 @@ class Paquery
      *
      * @return array
      */
-    public function getAllowedMethods()
+    public function getAllowedMethods(): array
     {
-        return array('paquery' => 'paquery');
+        return array(self::CODE => self::CODE);
+    }
+
+    public function isTrackingAvailable(): bool
+    {
+        return true;
     }
 
     /**
-     * @param RateRequest $request
+     * Processing additional validation to check is carrier applicable.
      *
-     * @return bool|Result
+     * @param DataObject $request
+     * @return $this|DataObject|boolean
      */
-    public function collectRates(RateRequest $request)
+    public function processAdditionalValidation(DataObject $request)
+    {
+        $errors = array();
+        //Skip by item validation if there is no items in request
+        if (empty($this->getAllItems($request))) {
+            $errors[] = __('There is no items in this order');
+        }
+
+        $shippingCountry = $request->getDestCountryId();
+
+        if ('AR' != $shippingCountry) { // This shipping method is only available for Argentina
+            $errors[] = __('This shipping method is only available in Argentina');
+        }
+
+        if (!empty($errors)) {
+            $this->debugErrors($errors);
+
+            return false;
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param RateRequest $request
+     * @return Result
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
+    public function collectRates(RateRequest $request): Result
     {
 
         $this->_request = $request;
-        /** @var \Magento\Shipping\Model\Rate\Result $result */
-        $result = $this->_rateResultFactory->create();
+        $result = $this->_rateFactory->create();
 
         // Get shipping address
-        $quote = $this->_helperCarrierData->getQuote();
+        $quote = $this->helperCarrierData->getQuote();
         $shippingAddress = $quote->getShippingAddress();
 
         $shipping_methods = $this->getShippingMethodsAvailable($shippingAddress);
         if (count($shipping_methods) == 0) return $result;
 
-        $products_dimensions = $this->_helperCarrierData->getDimensions($this->_helperCarrierData->getAllItems($this->_request->getAllItems()));
+        $products_dimensions = $this->helperCarrierData->getDimensions($this->helperCarrierData->getAllItems($this->_request->getAllItems()));
         $total_weight = $products_dimensions['total_weight'];
 
         foreach ($shipping_methods as $code => $data) {
@@ -139,6 +247,76 @@ class Paquery
         }
 
         return $result;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws Exception
+     */
+    public function getTrackingInfo($tracking)
+    {
+        $result = $this->getTracking($tracking);
+
+        if ($result instanceof \Magento\Shipping\Model\Tracking\Result) {
+            $this->registry->register('current_shipping_carrier', self::CODE);
+            return $result;
+        } elseif (is_string($result) && !empty($result)) {
+            return $result;
+        }
+
+        return false;
+    }
+
+    /**
+     * Return Tracking Information
+     *
+     * @param $trackingNumber
+     * @return mixed
+     * @throws Exception
+     */
+    public function getTracking($trackingNumber)
+    {
+        $paquery = $this->paqueryHelper->getApiInstance();
+        $username = $this->_scopeConfig->getValue('carriers/paquery/username');
+        $response = $paquery->get('/integration/' . $username . '/package/' . $trackingNumber);
+
+        if ($response['status'] === 200) {
+            $response = $response['response']['data'];
+            $result = $this->_trackFactory->create();
+
+            if (isset($response['statusLog'])) {
+                foreach (array_reverse($response['statusLog']) as $tracking_status) {
+                    $tracking = $this->_trackStatusFactory
+                        ->create()
+                        ->setCarrier($this->_code)
+                        ->setCarrierTitle($this->_scopeConfig->getValue('carriers/paquery/title'))
+                        ->setTracking($trackingNumber)
+                        ->addData($tracking_status);
+
+                    $result->append($tracking);
+                }
+            } else {
+                $tracking = $this->_trackStatusFactory
+                    ->create()
+                    ->setCarrier($this->_code)
+                    ->setCarrierTitle($this->_scopeConfig->getValue('carriers/paquery/title'))
+                    ->setTracking($trackingNumber)
+                    ->addData(array(
+                        'status'=> "No carrier Info"
+                    ));
+
+                $result->append($tracking);
+            }
+
+            return $result;
+
+        } else {
+            return $this->_trackErrorFactory
+                ->create()
+                ->setCarrier($this->getCarrierCode())
+                ->setCarrierTitle($this->_scopeConfig->getValue('carriers/paquery/title'))
+                ->setTracking($trackingNumber);
+        }
     }
 
     public function getShippingMethodsAvailable($shippingAddress)
@@ -299,5 +477,8 @@ class Paquery
         return array($floor, $apartment);
     }
 
-
+    protected function _doShipmentRequest(DataObject $request)
+    {
+        // Nothing to do
+    }
 }

@@ -1,0 +1,77 @@
+<?php
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+use Magento\Framework\View\Element\Template;
+use Magento\Shipping\Block\Tracking\Popup;
+
+/** @var $block Popup */
+//phpcs:disable Magento2.Files.LineLength.MaxExceeded
+
+$results = $block->getTrackingInfo();
+?>
+<div class="page tracking">
+    <?php if (!empty($results)) : ?>
+        <?php foreach ($results as $shipId => $result) : ?>
+            <?php if ($shipId) : ?>
+                <div class="order subtitle caption"><?= /* @noEscape */ $block->escapeHtml(__('Shipment #')) . $shipId ?></div>
+            <?php endif; ?>
+            <?php if (!empty($result)) : ?>
+                <table>
+                    <thead>
+                        <th><?php echo $block->escapeHtml(__('Date')) ?></th>
+                        <th><?php echo $block->escapeHtml(__('Hour')) ?></th>
+                        <th><?php echo $block->escapeHtml(__('Status')) ?></th>
+                        <th><?php echo $block->escapeHtml(__('Description')) ?></th>
+                    </thead>
+                    <tbody>
+                <?php foreach ($result as $trackings) : ?>
+
+                    <?php foreach ($trackings->getAllTrackings() as $track): ?>
+                        <?php
+                        $date = date_create($track->getData('modificationDate'));
+                        $day = date_format($date, "d/m/Y");
+                        $hour = date_format($date, "H:i:s");
+                        ?>
+                        <tr>
+                            <td><?php echo $day ?></td>
+                            <td><?php echo $hour ?></td>
+                            <td><?php echo $track->getData('status') ?></td>
+                            <td><?php echo $track->getData('statusDescription') ?></td>
+                        </tr>
+                    <?php endforeach ?>
+                <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else : ?>
+                <div class="message info empty">
+                    <div><?= $block->escapeHtml(__('There is no tracking available for this shipment.')) ?></div>
+                </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    <?php else : ?>
+        <div class="message info empty">
+            <div><?= $block->escapeHtml(__('There is no tracking available.')) ?></div>
+        </div>
+    <?php endif; ?>
+    <div class="actions">
+        <button type="button"
+                title="<?= $block->escapeHtmlAttr(__('Close Window')) ?>"
+                class="action close"
+                onclick="window.close(); window.opener.focus();">
+            <span><?= $block->escapeHtml(__('Close Window')) ?></span>
+        </button>
+    </div>
+</div>
+<script>
+    require([
+        'jquery'
+    ], function (jQuery) {
+        /* hide the close button when the content doesn't open in a modal window */
+        if (window.opener === null || typeof window.opener === "undefined") {
+            jQuery('.actions button.close').hide();
+        }
+    });
+</script>

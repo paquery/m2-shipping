@@ -2,13 +2,14 @@
     <default>
         <carriers>
             <paquery>
-                <active>0</active>
+                <active>1</active>
                 <title>Paquery</title>
                 <model>Paquery\Shipping\Model\Carrier\Paquery</model>
                 <sort_order>10</sort_order>
                 <allowspecific>0</allowspecific>
                 <name>Paquery</name>
-                <specificerrmsg>This shipping method is currently unavailable.</specificerrmsg>
+                <specificerrmsg>This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.</specificerrmsg>
+                <is_online>1</is_online>
             </paquery>
         </carriers>
     </default>
