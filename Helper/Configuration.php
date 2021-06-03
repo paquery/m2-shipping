@@ -74,7 +74,7 @@ class Configuration
 
 
     /**
-     * Return url, user and password depending in the execution mode
+     * Return url, user and password depending on the execution mode
      *
      * @return array
      */
@@ -92,6 +92,19 @@ class Configuration
                 $this->scopeConfig->getValue(RestClient::CARRIERS_PAQUERY_USERNAME_TEST),
                 $this->enc->decrypt($this->scopeConfig->getValue(RestClient::CARRIERS_PAQUERY_PASSWORD_TEST))
             );
+        }
+    }
+
+    /**
+     * Return Marketplace UID depending on the execution mode
+     * @return string
+     */
+    public function getMarketPlaceUID(): string
+    {
+        if (Mode::PROD == $this->scopeConfig->getValue(RestClient::CARRIERS_PAQUERY_MODE)) {
+            return $this->enc->decrypt($this->scopeConfig->getValue(RestClient::CARRIERS_PAQUERY_MARKETPLACE_UID));
+        } else {
+            return $this->enc->decrypt($this->scopeConfig->getValue(RestClient::CARRIERS_PAQUERY_MARKETPLACE_UID_TEST));
         }
     }
 }

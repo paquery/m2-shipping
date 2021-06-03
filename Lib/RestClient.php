@@ -21,10 +21,12 @@ class RestClient
     const CARRIERS_PAQUERY_URL = 'carriers/paquery/api_url';
     const CARRIERS_PAQUERY_USERNAME = 'carriers/paquery/username';
     const CARRIERS_PAQUERY_PASSWORD = 'carriers/paquery/password';
+    const CARRIERS_PAQUERY_MARKETPLACE_UID = 'carriers/paquery/marketplace_uid';
 
     const CARRIERS_PAQUERY_URL_TEST = 'carriers/paquery/api_url_test';
     const CARRIERS_PAQUERY_USERNAME_TEST = 'carriers/paquery/username_test';
     const CARRIERS_PAQUERY_PASSWORD_TEST = 'carriers/paquery/password_test';
+    const CARRIERS_PAQUERY_MARKETPLACE_UID_TEST = 'carriers/paquery/marketplace_uid_test';
 
     /**
      * @var ScopeConfigInterface

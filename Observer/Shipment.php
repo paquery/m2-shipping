@@ -164,7 +164,7 @@ class Shipment implements ObserverInterface
             $box_size = 3;
         }
         $params['package_size'] = $box_size;
-        $response = $paquery->post('/integration/' . $username . '/package', $params);
+        $response = $paquery->post('/caronte/integration/' . $username . '/package', $params);
         if (empty($response['response'] || empty($response['response']['data']['package']['external_code']))) {
             $this->_logger->error('Request params: ' . json_encode($params));
             $this->_logger->error('Error al procesar envio: ' . print_r($response, true));

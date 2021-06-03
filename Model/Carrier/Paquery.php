@@ -14,6 +14,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Framework\Xml\Security;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\RateRequest;
 use Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory;
 use Magento\Quote\Model\Quote\Address\RateResult\MethodFactory;
@@ -25,6 +26,7 @@ use Magento\Shipping\Model\Simplexml\ElementFactory;
 use Magento\Shipping\Model\Tracking\Result\StatusFactory;
 use Paquery\Shipping\Helper\CarrierData;
 use Paquery\Shipping\Helper\Data;
+use Paquery\Shipping\Model\Rest\RatesClient;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -83,6 +85,10 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
      * @var Registry
      */
     protected $registry;
+    /**
+     * @var RatesClient
+     */
+    protected $ratesClient;
 
     /**
      * Paquery constructor.
@@ -104,6 +110,7 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
      * @param Data $paqueryHelper
      * @param StockRegistryInterface $stockRegistry
      * @param Registry $registry
+     * @param RatesClient $ratesClient
      * @param array $data
      */
     public function __construct(
@@ -125,6 +132,7 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
         Data $paqueryHelper,
         StockRegistryInterface $stockRegistry,
         Registry $registry,
+        RatesClient $ratesClient,
         array $data = []
     )
     {
@@ -149,6 +157,7 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
         $this->helperCarrierData = $helperCarrierData;
         $this->paqueryHelper = $paqueryHelper;
         $this->registry = $registry;
+        $this->ratesClient = $ratesClient;
     }
 
     /**
@@ -201,6 +210,7 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
      * @return Result
      * @throws LocalizedException
      * @throws NoSuchEntityException
+     * @throws Exception
      */
     public function collectRates(RateRequest $request): Result
     {
@@ -278,7 +288,7 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
     {
         $paquery = $this->paqueryHelper->getApiInstance();
         $username = $this->_scopeConfig->getValue('carriers/paquery/username');
-        $response = $paquery->get('/integration/' . $username . '/package/' . $trackingNumber);
+        $response = $paquery->get('/caronte/integration/' . $username . '/package/' . $trackingNumber);
 
         if ($response['status'] === 200) {
             $response = $response['response']['data'];
@@ -319,13 +329,33 @@ class Paquery extends AbstractCarrierOnline implements CarrierInterface
         }
     }
 
-    public function getShippingMethodsAvailable($shippingAddress)
+    /**
+     * @param Address $shippingAddress
+     * @return array|array[]|false
+     * @throws Exception
+     */
+    public function getShippingMethodsAvailable(Address $shippingAddress)
     {
         if(empty($shippingAddress)) return false;
         $postcode = $shippingAddress->getPostcode();
 
         $zones_config = $this->_scopeConfig->getValue('carriers/paquery/zonemapping');
         $zones = (array)json_decode($zones_config, true);
+
+        $ratesFromApi = $this->ratesClient->getRates(
+            $shippingAddress->getCountry(),
+            $shippingAddress->getCity(),
+            $shippingAddress->getStreetFull(),
+            1,
+            1,
+            1
+        );
+
+        if (!empty($ratesFromApi)) {
+            return [
+                3 => array('name' => 'ship12hs', 'price' => $shippingAddress[0])
+            ];
+        }
 
         $shipping_methods = array();
 
